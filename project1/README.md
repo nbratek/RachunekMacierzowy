@@ -3,10 +3,12 @@
 Natalia Bratek, Joanna Konieczny 
 
 1. Treść projektu 
+
 Dla macierzy o rozmiarze mniejszym lub równym 2^l × 2^l algorytm tradycyjny. Dla macierzy o rozmiarze większym od
 2^l × 2^l algorytm rekurencyjny Binéta.
 
-2. Opis i fragmenty kodu
+2. Opis 
+
 Chcemy wyznaczyć macierz C, będącą iloczynem macierzy A i B, czyli C = A ׁᐧ B. 
 Algorytm Binet’a polega na rozbiciu macierzy na mniejsze bloki, a następnie mnożeniu tych bloków i sumowaniu  
 ich zgodnie z zasadami mnożenia macierzy. Po wykonaniu obliczeń dla wszystkich bloków, wyniki są łączone w macierz C. 
@@ -18,11 +20,8 @@ W naszej implementacji wykorzystujemy mechanizm *dynamic peeling*:
 3. Pseudokod 
 
         binet(A, B, l)
-
             Jeśli rozmiar macierzy jest mniejszy niż l
                 wykonaj tradycyjne_mnożenie_macierzy(A, B)
-			Jeśli macierz A ma rozmiar 1
-				zwróć wynik A * B
             Jeśli rozmiar macierzy A jest nieparzysty
                 wykonaj podział macierzy A i B na podmacierze dynamiczne A11, A12, A21, A22 oraz B11, B12, B21, B22 o rozmiarach (n-1) x (n-1), (n-1) x 1, 1 x (n-1), 1 x 1 odpowiednio, gdzie n to rozmiar macierzy A i B
                 oblicz pomocnicze macierze:
