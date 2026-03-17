@@ -17,10 +17,13 @@ class BinetAlgorithm(BaseAlgorithm):
             A11, A12, A21, A22 = self.calc.split_into_block_matrices_dynamic_peeling(A)
             B11, B12, B21, B22 = self.calc.split_into_block_matrices_dynamic_peeling(B)
 
-            C11 = self.calc.add(self.__binet(A11, B11), self.calc.traditional_matrix_multiplication(A12, B21))
-            C12 = self.calc.add(self.calc.traditional_matrix_multiplication(A11, B12), self.calc.traditional_matrix_multiplication(A12, B22))
-            C21 = self.calc.add(self.calc.traditional_matrix_multiplication(A21, B11), self.calc.traditional_matrix_multiplication(A22, B21))
-            C22 = self.calc.add(self.calc.traditional_matrix_multiplication(A21, B12), self.calc.traditional_matrix_multiplication(A22, B22))
+            C11 = self.calc.add(self.__binet(A11, B11), self.calc.standard_matrix_multiplication(A12, B21))
+            C12 = self.calc.add(self.calc.standard_matrix_multiplication(A11, B12),
+                                self.calc.standard_matrix_multiplication(A12, B22))
+            C21 = self.calc.add(self.calc.standard_matrix_multiplication(A21, B11),
+                                self.calc.standard_matrix_multiplication(A22, B21))
+            C22 = self.calc.add(self.calc.standard_matrix_multiplication(A21, B12),
+                                self.calc.standard_matrix_multiplication(A22, B22))
 
             return self.calc.connect_block_matrices_dynamic_peeling(C11, C12, C21, C22)
         else:
