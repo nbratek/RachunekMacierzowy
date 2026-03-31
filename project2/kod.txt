@@ -1,0 +1,264 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from time import time
+
+# eliminacja Gaussa
+
+def gauss_no_pivot_unit_diag(A, b):
+    n = A.shape[0]
+    A = A.astype(float)
+    b = b.astype(float)
+
+    for k in range(n):
+        pivot = A[k, k]
+        
+        A[k, :] = A[k, :] / pivot
+        b[k] = b[k] / pivot
+
+        for i in range(k + 1, n):
+            factor = A[i, k]
+            A[i, :] -= factor * A[k, :]
+            b[i] -= factor * b[k]
+
+    x = np.zeros(n)
+    for i in reversed(range(n)):
+        x[i] = b[i] - np.dot(A[i, i+1:], x[i+1:])
+
+    return x
+
+
+def gauss_partial_pivot(A, b):
+    n = A.shape[0]
+    A = A.astype(float)
+    b = b.astype(float)
+
+    for k in range(n):
+        max_row = np.argmax(abs(A[k:, k])) + k
+
+        if max_row != k:
+            A[[k, max_row]] = A[[max_row, k]]
+            b[[k, max_row]] = b[[max_row, k]]
+
+        for i in range(k + 1, n):
+            factor = A[i, k] / A[k, k]
+            A[i, :] -= factor * A[k, :]
+            b[i] -= factor * b[k]
+
+    x = np.zeros(n)
+    for i in reversed(range(n)):
+        x[i] = (b[i] - np.dot(A[i, i+1:], x[i+1:])) / A[i, i]
+
+    return x
+
+# LU faktoryzacja 
+
+def lu_no_pivot(A):
+    n = A.shape[0]
+    A = A.astype(float)
+
+    L = np.eye(n)
+    U = A.copy()
+
+    for k in range(n):
+        for i in range(k + 1, n):
+            factor = U[i, k] / U[k, k]
+            L[i, k] = factor
+            U[i, :] -= factor * U[k, :]
+
+    return L, U
+
+def lu_partial_pivot(A):
+    n = A.shape[0]
+    A = A.astype(float)
+
+    P = np.eye(n)
+    L = np.eye(n)
+    U = A.copy()
+
+    for k in range(n):
+        max_row = np.argmax(abs(U[k:, k])) + k
+
+        if max_row != k:
+            U[[k, max_row]] = U[[max_row, k]]
+            P[[k, max_row]] = P[[max_row, k]]
+
+            if k > 0:
+                L[[k, max_row], :k] = L[[max_row, k], :k]
+
+        for i in range(k + 1, n):
+            factor = U[i, k] / U[k, k]
+            L[i, k] = factor
+            U[i, :] -= factor * U[k, :]
+
+    return P, L, U
+
+# testy i wykresy
+
+def solve_lu(L, U, b):
+    n = len(b)
+
+    y = np.zeros(n)
+    for i in range(n):
+        y[i] = b[i] - np.dot(L[i, :i], y[:i])
+
+    x = np.zeros(n)
+    for i in reversed(range(n)):
+        x[i] = (y[i] - np.dot(U[i, i+1:], x[i+1:])) / U[i, i]
+
+    return x
+
+
+def solve_lu_pivot(P, L, U, b):
+    b2 = P @ b
+    return solve_lu(L, U, b2)
+
+sizes = [2**i for i in range(11)]
+times = {
+    "gauss_no_pivot": [],
+    "gauss_pivot": [],
+    "lu_no_pivot": [],
+    "lu_pivot": []
+}
+errors = {
+    "gauss_no_pivot": [],
+    "gauss_pivot": [],
+    "lu_no_pivot": [],
+    "lu_pivot": []
+}
+labels = {
+    "gauss_no_pivot": "Gauss bez pivotingu",
+    "gauss_pivot": "Gauss z pivotingiem",
+    "lu_no_pivot": "LU bez pivotingu",
+    "lu_pivot": "LU z pivotingiem"
+}
+
+for n in sizes:
+    A = np.random.rand(n, n)
+    x_true = np.random.rand(n)
+    b = A @ x_true
+
+    start = time()
+    x = gauss_no_pivot_unit_diag(A.copy(), b.copy())
+    end = time()
+    times["gauss_no_pivot"].append(end - start)
+    errors["gauss_no_pivot"].append(np.linalg.norm(x - x_true))
+ 
+    start = time()
+    x = gauss_partial_pivot(A.copy(), b.copy())
+    end = time()
+    times["gauss_pivot"].append(end - start)
+    errors["gauss_pivot"].append(np.linalg.norm(x - x_true))
+
+    start = time()
+    L, U = lu_no_pivot(A.copy())
+    x = solve_lu(L, U, b.copy())
+    end = time()
+    times["lu_no_pivot"].append(end - start)
+    errors["lu_no_pivot"].append(np.linalg.norm(x - x_true))
+
+    start = time()
+    P, L, U = lu_partial_pivot(A.copy())
+    x = solve_lu_pivot(P, L, U, b.copy())
+    end = time()
+    times["lu_pivot"].append(end - start)
+    errors["lu_pivot"].append(np.linalg.norm(x - x_true))
+
+    plt.figure()
+for key in times:
+    plt.plot(sizes, times[key], label=labels[key])
+
+plt.xlabel("Rozmiar macierzy n")
+plt.ylabel("Czas [s]")
+plt.title("Czas wykonania vs rozmiar macierzy")
+plt.legend()
+plt.grid()
+plt.show()
+
+plt.figure()
+for key in errors:
+    plt.plot(sizes, errors[key], label=labels[key])
+
+plt.xlabel("Rozmiar macierzy n")
+plt.ylabel("Błąd ||x - x_true||")
+plt.yscale("log")
+plt.title("Błąd rozwiązania")
+plt.legend()
+plt.grid()
+plt.show()
+
+def test(n, trials=100):
+    results = {
+        "gauss_no_pivot": {"time": [], "error": []},
+        "gauss_pivot": {"time": [], "error": []},
+        "lu_no_pivot": {"time": [], "error": []},
+        "lu_pivot": {"time": [], "error": []},
+    }
+    for i in range(trials):
+        A = np.random.rand(n, n)
+        x_true = np.random.rand(n)
+        b = A @ x_true
+
+        start = time()
+        x = gauss_no_pivot_unit_diag(A.copy(), b.copy())
+        end = time()
+        results["gauss_no_pivot"]["time"].append(end - start)
+        results["gauss_no_pivot"]["error"].append(np.linalg.norm(x - x_true))
+        
+        start = time()
+        x = gauss_partial_pivot(A.copy(), b.copy())
+        end = time()
+
+        results["gauss_pivot"]["time"].append(end - start)
+        results["gauss_pivot"]["error"].append(np.linalg.norm(x - x_true))
+
+        start = time()
+        L, U = lu_no_pivot(A.copy())
+        x = solve_lu(L, U, b.copy())
+        end = time()
+        results["lu_no_pivot"]["time"].append(end - start)
+        results["lu_no_pivot"]["error"].append(np.linalg.norm(x - x_true))
+
+        start = time()
+        P, L, U = lu_partial_pivot(A.copy())
+        x = solve_lu_pivot(P, L, U, b.copy())
+        end = time()
+
+        results["lu_pivot"]["time"].append(end - start)
+        results["lu_pivot"]["error"].append(np.linalg.norm(x - x_true))
+
+
+    A = np.random.rand(n, n)
+    x_true = np.random.rand(n)
+    b = A @ x_true
+
+    print(x_true)
+
+    start = time()
+    x = gauss_no_pivot_unit_diag(A.copy(), b.copy())
+    end = time()
+    print(f"Gauss no pivot - result: {x}, time: {end-start}, error: {np.linalg.norm(x - x_true)}")
+    print(f"Gauss no pivot - mean time: {np.mean(results['gauss_no_pivot']["time"])}, mean error - {np.mean(results['gauss_no_pivot']["error"])}")
+
+    start = time()
+    x = gauss_partial_pivot(A.copy(), b.copy())
+    end = time()
+    print(f"Gauss pivot - result: {x}, time: {end-start}, error: {np.linalg.norm(x - x_true)}")
+    print(f"Gauss pivot - mean time: {np.mean(results['gauss_pivot']["time"])}, mean error - {np.mean(results['gauss_pivot']["error"])}")
+    
+    start = time()
+    L, U = lu_no_pivot(A.copy())
+    x = solve_lu(L, U, b.copy())
+    end = time()
+    print(f"LU no pivot - result: {x}, time: {end-start}, error: {np.linalg.norm(x - x_true)}")
+    print(f"LU no pivot - mean time: {np.mean(results['lu_no_pivot']["time"])}, mean error - {np.mean(results['lu_no_pivot']["error"])}")
+    
+
+    start = time()
+    P, L, U = lu_partial_pivot(A.copy())
+    x = solve_lu_pivot(P, L, U, b.copy())
+    end = time()
+    print(f"LU pivot - result: {x}, time: {end-start}, error: {np.linalg.norm(x - x_true)}")
+    print(f"LU pivot - mean time: {np.mean(results['lu_pivot']["time"])}, mean error - {np.mean(results['lu_pivot']["error"])}")
+    
+test(n=17)
+test(n=24)
