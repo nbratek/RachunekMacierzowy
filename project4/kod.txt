@@ -1,0 +1,81 @@
+import numpy as np
+
+A = np.array([
+    [1, 2, 3],
+    [4, 5, 6]
+], dtype=float)
+
+n, m = A.shape
+
+print("1. A:\n", A)
+
+AAT = A @ A.T
+print("\n2. A A^T:\n", AAT)
+
+eigvals_U, U = np.linalg.eigh(AAT)
+
+idx = np.argsort(eigvals_U)[::-1]
+eigvals_U = eigvals_U[idx]
+U = U[:, idx]
+
+sigma = np.sqrt(np.clip(eigvals_U, 0, None))
+
+print("\n3. λ (AAT):\n", eigvals_U)
+print("\n3. U:\n", U)
+
+print("\n4. σ:\n", sigma)
+
+V = np.zeros((m, n))
+
+for i in range(len(sigma)):
+    if sigma[i] > 1e-10:
+        V[:, i] = (A.T @ U[:, i]) / sigma[i]
+
+print("\n5. V:\n", V)
+
+print("\n6. V^T:\n", V.T)
+
+ATA = A.T @ A
+print("\n7. A^T A:\n", ATA)
+
+eigvals_V, V2 = np.linalg.eigh(ATA)
+
+idx = np.argsort(eigvals_V)[::-1]
+eigvals_V = eigvals_V[idx]
+V2 = V2[:, idx]
+
+sigma2 = np.sqrt(np.clip(eigvals_V, 0, None))
+
+print("\n8. λ (ATA):\n", eigvals_V)
+print("\n8. V2:\n", V2)
+
+print("\n9. σ2:\n", sigma2)
+
+U2 = np.zeros((n, m))
+
+for i in range(len(sigma2)):
+    if sigma2[i] > 1e-10:
+        U2[:, i] = (A @ V2[:, i]) / sigma2[i]
+
+print("\n10. U2:\n", U2)
+
+print("\n11. U:\n", U)
+
+A_rec_1 = np.zeros((n, m))
+A_rec_2 = np.zeros((n, m))
+
+r = min(n, m)
+
+for i in range(r):
+    A_rec_1 += sigma[i] * np.outer(U[:, i], V[:, i])
+    A_rec_2 += sigma2[i] * np.outer(U2[:, i], V2[:, i])
+
+print("\n12. Błąd AAT:", np.linalg.norm(A - A_rec_1))
+print("12. Błąd ATA:", np.linalg.norm(A - A_rec_2))
+print("12. Różnica metod:", np.linalg.norm(A_rec_1 - A_rec_2))
+
+rank = np.linalg.matrix_rank(A)
+null_dim = m - rank
+
+print("\n13. dim R(A):", rank)
+print("13. dim N(A):", null_dim)
