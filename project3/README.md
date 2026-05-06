@@ -31,6 +31,12 @@ Ostatnia własność oznacza, że norma iloczynu macierzy nie przekracza iloczyn
 Małe wartości współczynnika uwarunkowania oznaczają, że układ jest dobrze uwarunkowany.
 
 ## 1. Współczynnik uwarunkowania 
+
+Współczynnik uwarunkowania macierzy definiowany jest jako iloczyn normy macierzy oraz normy macierzy odwrotnej. Definicja jest taka sama dla dowolnej normy macierzowej (zmienia się jedynie indeks p określający rodzaj normy).
+
+Jeżeli macierz jest osobliwa (wyznacznik równy zero), macierz odwrotna nie istnieje, a współczynnik uwarunkowania przyjmuje wartość nieskończoną. Oznacza to, że układ równań liniowych z taką macierzą jest źle postawiony.
+
+
 - wzór:
 
 <p align="center">
@@ -38,6 +44,18 @@ Małe wartości współczynnika uwarunkowania oznaczają, że układ jest dobrze
 </p>
 
 Współczynnik uwarunkowania macierzy ma tę samą definicję dla dowolnej normy.
+
+- psudokod 
+
+```text
+    condition_number(matrix_norm, M):
+        Jeżeli det(M) = 0:
+            Zwróć ∞
+        M_inv <- macierz odwrotna do M
+        Zwróć matrix_norm(M) * matrix_norm(M_inv)
+
+```    
+    
 
 
 - implementacja:
@@ -53,12 +71,29 @@ def condition_number(matrix_norm, M):
 
 ## 2. Norma macierzowa  ∥M∥1
 
+Norma pierwsza macierzy (kolumnowa) to maksymalna z sum modułów elementów w poszczególnych kolumnach. Innymi słowy, dla każdej kolumny obliczamy sumę wartości bezwzględnych jej elementów, a następnie wybieramy największą z tych sum.
+
+Jest to norma indukowana przez wektorową normę 1, wyrażająca maksymalne „wzmocnienie" wektora przez macierz mierzone w normie 1.
+
 - wzór:
 <p align="center">
   <img src="wzory/n1.png" width="200">
 </p>
 
+- pseudokod
 
+```text
+    matrix_norm_1(M):
+        max_sum <- 0
+        Dla j = 1 do n:
+            col_sum <- 0
+            Dla i = 1 do m:
+                col_sum <- col_sum + |M[i,j]|
+            Jeżeli col_sum > max_sum:
+                max_sum <- col_sum
+    
+        Zwróć max_sum
+```
 - implementacja 
 ```python
 def matrix_norm_1(M):
@@ -66,11 +101,23 @@ def matrix_norm_1(M):
 ```
 
 ## 3. Norma macierzowa  ∥M∥2
+
+Norma druga macierzy (spektralna) to pierwiastek kwadratowy z największej wartości własnej macierzy A^T·A. Jest to norma indukowana przez wektorową normę euklidesową.
+
 - wzór:
 <p align="center">
   <img src="wzory/n2.png" width="200">
 </p>
 
+- pseudokod
+
+```text
+    matrix_norm_2(M):
+        B <- M^T * M
+        eigenvalues <- wartości własne macierzy B
+        lambda_max <- największa wartość własna z eigenvalues
+        Zwróć √lambda_max
+```
 
 - implementacja 
 ```python
@@ -83,13 +130,26 @@ def matrix_norm_2(M):
 
 ## 3. Norma macierzowa ∥M∥p
 
+Norma p macierzy to norma typu Frobeniusa uogólniona do wykładnika p. Definiuje się ją jako pierwiastek p-tego stopnia z sumy p-tych potęg modułów wszystkich elementów macierzy.
+
+
 - wzór:
 
 <p align="center">
   <img src="wzory/n_p.png" width="200">
 </p>
 
+- pseudokod
 
+```text
+    matrix_norm_p(M, p):
+        suma <- 0
+        Dla i = 1 do m:
+            Dla j = 1 do n:
+                suma <- suma + |M[i,j]|^p
+        
+        Zwróć suma^(1/p)
+```
 - implementacja 
 ```python
 
@@ -98,6 +158,9 @@ def matrix_norm_p(M, p):
 ```
 
 ### 4. Norma macierzowa ∥M∥inf
+
+Norma nieskończoność macierzy to maksymalna z sum modułów elementów w poszczególnych wierszach. Dla każdego wiersza obliczamy sumę wartości bezwzględnych jego elementów i wybieramy największą z tych sum.
+
 - wzór
 
 
@@ -106,6 +169,21 @@ def matrix_norm_p(M, p):
 </p>
 
 
+- pseudokod
+
+
+```text
+    matrix_norm_inf(M):
+        max_sum <- 0
+        Dla i = 1 do m:
+            row_sum <- 0
+            Dla j = 1 do n:
+                row_sum <- row_sum + |M[i,j]|
+            Jeżeli row_sum > max_sum:
+                max_sum <- row_sum
+        
+        Zwróć max_sum
+```
 
 - implementacja 
 ```python
@@ -115,7 +193,7 @@ def matrix_norm_inf(M):
 
 
 ## 5. Wyniki dla macierzy
-Do testów wykorzystano losowo wygenerowaną macierz $M$.  
+Do testów wykorzystano losowo wygenerowaną macierz M.  
 Dla tej macierzy obliczono wartości norm oraz współczynnika uwarunkowania przy użyciu własnej implementacji
 oraz funkcji wbudowanych biblioteki NumPy(np.linalg.norm() oraz np.linalg.cond()).
 <p align="center">
@@ -141,6 +219,10 @@ współczynnik uwarunkowania: 1.2831955546343297
 numpy współczynnik uwarunkowania: 1.2831955546343299
 ```
 
+
+
 ## Wnioski
 
-Zaimplementowane funkcje poprawnie obliczają normy macierzowe oraz współczynnik uwarunkowania. 
+- Zaimplementowane funkcje poprawnie obliczają normy macierzowe oraz współczynnik uwarunkowania. 
+- Wyniki naszej implementacji pokrywają się z tymi z NumPy dla wszystkich obliczanych norm.
+- Wartość współczynnika uwarunkowania (~1.28) jest niewielka, więc testowa macierz jest dobrze uwarunkowana.
